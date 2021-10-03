@@ -2,20 +2,13 @@ defmodule Teller.FallbackController do
   use TellerWeb, :controller
   require Logger
 
-  def call(conn, {:error, :validation_failure, errors}) do
+  def call(conn, {:error, :validation_failure}) do
     conn
     |> put_status(:unprocessable_entity)
-    |> Phoenix.Controller.json(%{errors: errors})
-  end
-
-  def call(conn, {:error, :unauthorized}) do
-    conn
-    |> put_status(:bad_request)
     |> Phoenix.Controller.json(%{
       error: %{
-        code: "400",
-        message:
-          "The request was unacceptable. This status is used when a request that must be made with a Teller client certificate is made without one."
+        code: "422",
+        message: "A request was made with an invalid request body."
       }
     })
   end
@@ -38,6 +31,17 @@ defmodule Teller.FallbackController do
       error: %{
         code: "403",
         message: "A request was made with an invalid or revoked access token."
+      }
+    })
+  end
+
+  def call(conn, {:error, :not_found}) do
+    conn
+    |> put_status(:forbidden)
+    |> Phoenix.Controller.json(%{
+      error: %{
+        code: "404",
+        message: "Requested resource not found."
       }
     })
   end

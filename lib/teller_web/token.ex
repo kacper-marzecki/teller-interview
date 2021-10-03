@@ -6,12 +6,7 @@ defmodule Teller.Token do
       "test_" <> raw_token_with_colon ->
         token_string = String.replace_suffix(raw_token_with_colon, ":", "")
 
-        seed =
-          :crypto.hash(:sha, token_string)
-          |> Base.encode16()
-          |> Integer.parse(16)
-          |> then(fn {int, _} -> Integer.mod(int, 100) end)
-
+        seed = Teller.Utils.generate_int(token_string, 100)
         {:ok, %{seed: seed}}
 
       _ ->
