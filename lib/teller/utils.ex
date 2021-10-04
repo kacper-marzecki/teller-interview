@@ -16,6 +16,7 @@ defmodule Teller.Utils do
     |> Enum.reverse()
     |> Enum.take(n)
     |> Enum.reverse()
+    |> to_string()
   end
 
   def get_at(list, index) do

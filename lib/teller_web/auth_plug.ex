@@ -1,4 +1,4 @@
-defmodule Teller.AuthPlug do
+defmodule TellerWeb.AuthPlug do
   def init(options), do: options
 
   def call(%Plug.Conn{} = conn, _opts) do
@@ -11,12 +11,12 @@ defmodule Teller.AuthPlug do
             with {:ok, token} <- Teller.Token.parse(raw_auth_string) do
               Plug.Conn.assign(conn, :token, token)
             else
-              err -> Teller.FallbackController.call(conn, err) |> Plug.Conn.halt()
+              err -> TellerWeb.FallbackController.call(conn, err) |> Plug.Conn.halt()
             end
         end
 
       _ ->
-        Teller.FallbackController.call(conn, {:error, :missing_token}) |> Plug.Conn.halt()
+        TellerWeb.FallbackController.call(conn, {:error, :missing_token}) |> Plug.Conn.halt()
     end
   end
 end

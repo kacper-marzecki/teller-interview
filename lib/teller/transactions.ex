@@ -100,19 +100,20 @@ defmodule Teller.Transactions do
     "Sonic",
     "Shell"
   ]
+  # Date from which we generate transactions
   @tx_origin_date Date.new!(2021, 07, 1)
   @app_url Application.compile_env!(:teller, :app_url)
+  @time_service Application.get_env(:teller, :time_service, Teller.TimeImpl)
+
   alias Teller.Utils
 
   def generate_transactions(%{seed: seed}) do
-    # offset = Integer.mod(seed, 10)
-    # IO.inspect(offset, label: "offset")
-    offset = 0
-    starting_balance = 100_00000
+    offset = Integer.mod(seed, 10)
+    IO.inspect(offset, label: "offset")
+    # offset = 0
+    starting_balance = 10_000_000
 
-    now =
-      DateTime.utc_now()
-      |> DateTime.to_date()
+    now = @time_service.utc_today()
 
     visible_date_start = Date.add(now, -90)
     origin_visible_diff = Date.diff(visible_date_start, @tx_origin_date)

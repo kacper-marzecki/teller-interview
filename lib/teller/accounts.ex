@@ -11,18 +11,20 @@ defmodule Teller.Accounts do
   ]
   @institutions ["Chase", "Bank of America", "Wells Fargo", "Citibank", "Capital One"]
 
-  @app_url Application.compile_env!(:teller, :app_url)
-  # Date from which we generate transactions
-
+  @app_url Application.get_env(:teller, :app_url)
+  @time_service Application.get_env(:teller, :time_service, Teller.TimeImpl)
   alias Teller.Transactions
   alias Teller.Utils
 
   def show_transactions(account_id, count, from_id, %{seed: seed}) do
     if is_valid_account(account_id, seed) do
-      Transactions.generate_transactions(%{seed: seed})
-      |> Enum.map(&prepare_transaction_for_presentation/1)
-      |> take_from_transaction_id(from_id)
-      |> limit_to_count(count)
+      transactions =
+        Transactions.generate_transactions(%{seed: seed})
+        |> Enum.map(&prepare_transaction_for_presentation/1)
+        |> take_from_transaction_id(from_id)
+        |> limit_to_count(count)
+
+      {:ok, transactions}
     else
       {:error, :not_found}
     end
@@ -55,19 +57,21 @@ defmodule Teller.Accounts do
   end
 
   def show_transaction(account_id, transaction_id, %{seed: seed}) do
-    Transactions.generate_transactions(%{seed: seed})
-    |> Enum.map(&prepare_transaction_for_presentation/1)
-    |> Enum.find()
+    tx =
+      Transactions.generate_transactions(%{seed: seed})
+      |> Enum.map(&prepare_transaction_for_presentation/1)
+      |> Enum.find(fn tx -> tx.id == transaction_id end)
 
-    # TODO
-    if is_valid_account(account_id, seed) do
+    if is_valid_account(account_id, seed) and tx do
+      tx
     else
       {:error, :not_found}
     end
   end
 
   def list_accounts(%{seed: seed}) do
-    [show_account("acc_#{seed}", %{seed: seed})]
+    {:ok, account} = show_account("acc_#{seed}", %{seed: seed})
+    {:ok, [account]}
   end
 
   def show_account(account_id, %{seed: seed}) do
@@ -75,7 +79,7 @@ defmodule Teller.Accounts do
     account_name = Utils.get_at(@account_names, seed)
 
     if is_valid_account(account_id, seed) do
-      %{
+      account = %{
         currency: "USD",
         enrollment_id: "enr_#{seed}",
         id: account_id,
@@ -83,7 +87,7 @@ defmodule Teller.Accounts do
           id: institution_id(institution_name),
           name: institution_name
         },
-        last_four: generate_account_id(seed) |> Teller.Utils.last_n_letters(4),
+        last_four: generate_account_number(seed) |> Teller.Utils.last_n_letters(4),
         links: %{
           balances: "#{@app_url}/accounts/#{account_id}/balances",
           details: "#{@app_url}/accounts/#{account_id}/details",
@@ -94,6 +98,8 @@ defmodule Teller.Accounts do
         subtype: "checking",
         type: "depository"
       }
+
+      {:ok, account}
     else
       {:error, :not_found}
     end
@@ -101,9 +107,9 @@ defmodule Teller.Accounts do
 
   def show_account_details(account_id, %{seed: seed}) do
     if is_valid_account(account_id, seed) do
-      %{
+      details = %{
         account_id: account_id,
-        account_number: generate_account_id(seed),
+        account_number: generate_account_number(seed),
         links: %{
           account: "#{@app_url}/accounts/#{account_id}",
           self: "#{@app_url}/accounts/#{account_id}/details"
@@ -112,6 +118,8 @@ defmodule Teller.Accounts do
           ach: generate_routing_number(seed)
         }
       }
+
+      {:ok, details}
     else
       {:error, :not_found}
     end
@@ -121,7 +129,7 @@ defmodule Teller.Accounts do
     if is_valid_account(account_id, seed) do
       {available, ledger} = current_available_and_ledger(seed)
 
-      %{
+      balances = %{
         account_id: account_id,
         available: available,
         ledger: ledger,
@@ -130,13 +138,15 @@ defmodule Teller.Accounts do
           self: "#{@app_url}/accounts/#{account_id}/balances"
         }
       }
+
+      {:ok, balances}
     else
       {:error, :not_found}
     end
   end
 
   def current_available_and_ledger(seed) do
-    today = Utils.today_date()
+    today = @time_service.utc_today()
     yesterday = Date.add(today, -1)
     today_str = Date.to_string(today)
     yesterday_str = Date.to_string(yesterday)
@@ -162,7 +172,7 @@ defmodule Teller.Accounts do
     |> String.downcase()
   end
 
-  def generate_account_id(seed) do
+  def generate_account_number(seed) do
     Teller.Utils.generate_int(seed, 1_000_000_000_000)
     |> Integer.to_string()
   end

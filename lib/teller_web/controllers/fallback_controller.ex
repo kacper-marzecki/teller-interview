@@ -1,4 +1,4 @@
-defmodule Teller.FallbackController do
+defmodule TellerWeb.FallbackController do
   use TellerWeb, :controller
   require Logger
 
@@ -37,7 +37,7 @@ defmodule Teller.FallbackController do
 
   def call(conn, {:error, :not_found}) do
     conn
-    |> put_status(:forbidden)
+    |> put_status(:not_found)
     |> Phoenix.Controller.json(%{
       error: %{
         code: "404",
@@ -46,44 +46,8 @@ defmodule Teller.FallbackController do
     })
   end
 
-  def call(conn, {:error, %Ecto.Changeset{} = changeset}) do
-    conn
-    |> put_status(:unprocessable_entity)
-    |> Phoenix.Controller.json(%{errors: error_strings(changeset)})
-  end
-
-  def call(conn, {:error, :not_found}) do
-    conn
-    |> put_status(:not_found)
-    |> Plug.Conn.send_resp(:not_found, [])
-  end
-
-  def call(conn, {:error, {:not_found, target}}) do
-    conn
-    |> put_status(:not_found)
-    |> Phoenix.Controller.json(%{errors: ["not found: " <> to_string(target)]})
-  end
-
   def call(conn, err) do
     Logger.error(err)
     Plug.Conn.send_resp(conn, :internal_server_error, "")
   end
-
-  def error_strings(%Ecto.Changeset{} = changeset) do
-    Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
-      Enum.reduce(opts, msg, fn {key, value}, acc ->
-        String.replace(acc, "%{#{key}}", _to_string(value))
-      end)
-    end)
-    |> Enum.map(fn {k, v} ->
-      joined_errors = Enum.join(v, "; ")
-      "#{joined_errors}: #{k}"
-    end)
-  end
-
-  defp _to_string(val) when is_list(val) do
-    Enum.join(val, ",")
-  end
-
-  defp _to_string(val), do: to_string(val)
 end

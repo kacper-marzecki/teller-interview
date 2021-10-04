@@ -12,7 +12,8 @@ defmodule TellerWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
-    plug Teller.AuthPlug
+    plug TellerWeb.AuthPlug
+    plug TellerWeb.RequestCountPlug
   end
 
   scope "/accounts" do
@@ -31,7 +32,8 @@ defmodule TellerWeb.Router do
     end
   end
 
-  scope "/dashboard" do
+  scope "/" do
     pipe_through :browser
+    live "/", TellerWeb.DashboardLive
   end
 end

@@ -20,6 +20,7 @@ defmodule TellerWeb do
   def controller do
     quote do
       use Phoenix.Controller, namespace: TellerWeb
+      action_fallback(TellerWeb.FallbackController)
 
       import Plug.Conn
       alias TellerWeb.Router.Helpers, as: Routes
