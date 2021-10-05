@@ -3,6 +3,7 @@ The app is hosted on heroku free tier, so it may require some time to start up.
 
 # Token structure & generation:
 test_{seed}
+
 seed - a string that is used to compute input to generating accounts, transactions etc.
 
 To generate token: `echo test_1234: | base64`
