@@ -168,14 +168,9 @@ defmodule TellerWeb.AccountControllerTest do
   def test_transactions_add_up(transactions) do
     Enum.reverse(transactions)
     |> Enum.reduce(fn tx, next_tx ->
-      IO.inspect(next_tx, label: "NEXT")
-      IO.inspect(tx, label: "PREV")
       next_balance = next_tx["running_balance"] |> parse_float_string_to_int()
       transaction_amount = next_tx["amount"] |> parse_float_string_to_int()
       previous_balance = tx["running_balance"] |> parse_float_string_to_int()
-      IO.inspect(next_balance, label: "next_balance")
-      IO.inspect(transaction_amount, label: "transaction_amount")
-      IO.inspect(previous_balance, label: "previous_balance")
 
       assert previous_balance + transaction_amount == next_balance
       tx

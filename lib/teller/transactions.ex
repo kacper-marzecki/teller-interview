@@ -109,23 +109,15 @@ defmodule Teller.Transactions do
 
   def generate_transactions(%{seed: seed}) do
     offset = Integer.mod(seed, 10)
-    IO.inspect(offset, label: "offset")
-    # offset = 0
     starting_balance = 10_000_000
 
     now = @time_service.utc_today()
 
     visible_date_start = Date.add(now, -90)
     origin_visible_diff = Date.diff(visible_date_start, @tx_origin_date)
-    IO.inspect(now, label: "now")
-    IO.inspect(visible_date_start, label: "visible_date_start")
-    IO.inspect(origin_visible_diff, label: "origin_visible_diff")
-    IO.inspect(Date.diff(now, visible_date_start), label: "now_visible_diff")
 
     {transaction_count_up_to_visible, day_offset} =
       if origin_visible_diff > 0 do
-        IO.inspect(@transactions_per_day_sum, label: "@transactions_per_day_sum")
-
         {batches, days} = Utils.floor_and_mod(origin_visible_diff, @transactions_per_day_size)
 
         transaction_count_up_to_visible =
@@ -141,19 +133,6 @@ defmodule Teller.Transactions do
 
     {transaction_batches_up_to_visible, loose_transactions_up_to_visible} =
       Utils.floor_and_mod(transaction_count_up_to_visible, @transaction_amounts_size)
-
-    IO.inspect(
-      {transaction_batches_up_to_visible, loose_transactions_up_to_visible},
-      label: "{transaction_batches_up_to_visible, loose_transactions_up_to_visible}"
-    )
-
-    IO.inspect(transaction_batches_up_to_visible * @transaction_amounts_sum,
-      label: "transaction_batches_up_to_visible * @transaction_amounts_sum"
-    )
-
-    IO.inspect(Enum.sum(Enum.take(@transaction_amounts, loose_transactions_up_to_visible)),
-      label: "Enum.sum(Enum.take(@transaction_amounts, loose_transactions_up_to_visible))"
-    )
 
     transaction_sum_up_to_visible =
       transaction_batches_up_to_visible * @transaction_amounts_sum +

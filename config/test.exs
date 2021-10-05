@@ -15,3 +15,5 @@ config :logger, level: :warn
 
 # Initialize plugs at runtime for faster test compilation
 config :phoenix, :plug_init_mode, :runtime
+config :teller, :app_url, "https://public_url.com"
+config :teller, :time_service, Teller.TimeMock
