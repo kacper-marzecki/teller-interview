@@ -6,6 +6,7 @@ test_{seed}
 seed - a string that is used to compute input to generating accounts, transactions etc.
 
 To generate token: `echo test_1234: | base64`
+
 `curl https://teller-interview.herokuapp.com/accounts/ -H "Authorization: Bearer dGVzdF8xMjM0Ogo="`
 
 
