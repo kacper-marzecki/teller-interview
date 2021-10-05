@@ -24,7 +24,7 @@ defmodule Teller.Transactions do
   @transaction_amounts_size length(@transaction_amounts)
   @transaction_amounts_sum Enum.sum(@transaction_amounts)
   @transactions_per_day [4, 3, 2, 4, 5, 4, 1, 2, 3, 4, 5, 2, 2, 3, 3, 5, 3, 2, 5, 2]
-  # @transactions_per_day [4, 3, 2]
+
   @transactions_per_day_sum Enum.sum(@transactions_per_day)
   @transactions_per_day_size length(@transactions_per_day)
 
@@ -100,7 +100,7 @@ defmodule Teller.Transactions do
     "Sonic",
     "Shell"
   ]
-  # Date from which we generate transactions
+  # Date from which we generate transactions, 90 days in the past
   @tx_origin_date Date.new!(2021, 07, 1)
   @app_url Application.compile_env!(:teller, :app_url)
   @time_service Application.get_env(:teller, :time_service, Teller.TimeImpl)
@@ -162,7 +162,7 @@ defmodule Teller.Transactions do
   end
 
   def generate_visible_transactions(visible_dates, vta_stream, tpd_stream, balance_to_date, seed) do
-    %{transactions: visible_transactions} =
+    %{transactions: reverse_transactions} =
       Enum.reduce(
         visible_dates,
         %{
@@ -177,25 +177,27 @@ defmodule Teller.Transactions do
           {transaction_amounts, vta_stream} =
             Utils.take_from_stream(acc.vta_stream, transactions_per_day)
 
-          {balance, new_transactions} =
-            Enum.reduce(transaction_amounts, {acc.balance, []}, fn amount,
-                                                                   {balance, transactions} ->
+          {balance, reverse_new_transactions, _} =
+            Enum.reduce(transaction_amounts, {acc.balance, [], 0}, fn amount,
+                                                                      {balance, transactions,
+                                                                       day_transaction_count} ->
               transaction =
-                construct_transaction(date, amount, balance, length(transactions), seed)
+                construct_transaction(date, amount, balance, day_transaction_count, seed)
 
-              {transaction.running_balance, transactions ++ [transaction]}
+              {transaction.running_balance, [transaction | transactions],
+               day_transaction_count + 1}
             end)
 
           %{
             vta_stream: vta_stream,
             tpd_stream: tpd_stream,
-            transactions: acc.transactions ++ new_transactions,
+            transactions: reverse_new_transactions ++ acc.transactions,
             balance: balance
           }
         end
       )
 
-    visible_transactions
+    Enum.reverse(reverse_transactions)
   end
 
   def construct_transaction(date, amount, balance, no_in_day, seed) do

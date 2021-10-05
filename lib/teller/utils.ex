@@ -38,9 +38,4 @@ defmodule Teller.Utils do
   def take_from_stream(stream, number) do
     {Enum.take(stream, number), Stream.drop(stream, number)}
   end
-
-  def today_date,
-    do:
-      DateTime.utc_now()
-      |> DateTime.to_date()
 end
